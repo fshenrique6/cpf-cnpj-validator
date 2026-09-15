@@ -1,0 +1,9 @@
+cat > .gitignore << 'EOF'
+cpf-cnpj-validator
+*.exe
+.env
+.vscode/
+.idea/
+node_modules/
+dist/
+EOF

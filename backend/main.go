@@ -2,6 +2,7 @@ package main
 
 import (
 	"cpf-cnpj-validator/database"
+	"cpf-cnpj-validator/handlers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,6 +15,8 @@ func main() {
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
+
+	router.POST("/documents", handlers.CreateDocument)
 
 	router.Run(":8080")
 }

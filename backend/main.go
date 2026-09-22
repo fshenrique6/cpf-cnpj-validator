@@ -17,6 +17,7 @@ func main() {
 	})
 
 	router.POST("/documents", handlers.CreateDocument)
+	router.GET("/documents", handlers.GetDocuments)
 
 	router.Run(":8080")
 }

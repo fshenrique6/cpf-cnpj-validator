@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"cpf-cnpj-validator/database"
@@ -107,4 +109,32 @@ func GetDocuments(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, documents)
+}
+
+func GetDocumentByID(c *gin.Context) {
+	id := c.Param("id")
+
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var document models.Document
+	err = database.DB.QueryRow(`
+		SELECT id, number, type, blocklisted, created_at, updated_at
+		FROM documents
+		WHERE id = $1
+	`, idInt).Scan(&document.ID, &document.Number, &document.Type, &document.Blocklisted, &document.CreatedAt, &document.UpdatedAt)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, document)
 }

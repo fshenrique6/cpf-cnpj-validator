@@ -19,6 +19,7 @@ func main() {
 	router.POST("/documents", handlers.CreateDocument)
 	router.GET("/documents", handlers.GetDocuments)
 	router.GET("/documents/:id", handlers.GetDocumentByID)
+	router.PUT("/documents/:id", handlers.UpdateDocument)
 
 	router.Run(":8080")
 }

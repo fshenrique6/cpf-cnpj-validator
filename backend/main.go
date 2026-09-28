@@ -21,6 +21,7 @@ func main() {
 	router.GET("/documents/:id", handlers.GetDocumentByID)
 	router.PUT("/documents/:id", handlers.UpdateDocument)
 	router.PATCH("/documents/:id/blocklist", handlers.UpdateBlocklist)
+	router.DELETE("/documents/:id", handlers.DeleteDocument)
 
 	router.Run(":8080")
 }

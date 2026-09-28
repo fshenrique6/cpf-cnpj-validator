@@ -20,6 +20,7 @@ func main() {
 	router.GET("/documents", handlers.GetDocuments)
 	router.GET("/documents/:id", handlers.GetDocumentByID)
 	router.PUT("/documents/:id", handlers.UpdateDocument)
+	router.PATCH("/documents/:id/blocklist", handlers.UpdateBlocklist)
 
 	router.Run(":8080")
 }

@@ -183,3 +183,44 @@ func UpdateDocument(c *gin.Context) {
 
 	c.JSON(http.StatusOK, updated)
 }
+
+type blocklistInput struct {
+	Blocklisted bool `json:"blocklisted"`
+}
+
+func UpdateBlocklist(c *gin.Context) {
+	id := c.Param("id")
+
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var input blocklistInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var updated models.Document
+	err = database.DB.QueryRow(`
+		UPDATE documents
+		SET blocklisted = $1, updated_at = now()
+		WHERE id = $2
+		RETURNING id, number, type, blocklisted, created_at, updated_at
+	`, input.Blocklisted, idInt).Scan(
+		&updated.ID, &updated.Number, &updated.Type, &updated.Blocklisted, &updated.CreatedAt, &updated.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
+}

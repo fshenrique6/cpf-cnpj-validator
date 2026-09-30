@@ -25,11 +25,10 @@ func CountRequests() gin.HandlerFunc {
 }
 
 func Handler (c *gin.Context) {
-	uptime := time.Since(startTime).String()
+	uptime := time.Since(startTime).Round(time.Second).String()
 	
 	c.JSON(http.StatusOK, gin.H{
 		"uptime":        uptime,
 		"request_count": requestCount.Load(),
-		"total_requests":   requestCount.Load(),
 	})
 }

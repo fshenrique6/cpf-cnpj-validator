@@ -292,7 +292,7 @@ func TestDeleteDocument_Success(t *testing.T) {
 	database.DB = mockDB
 
 	mock.ExpectExec("DELETE FROM documents").
-		WithArgs("1").
+		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	router := setupRouter()
@@ -320,7 +320,7 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 	database.DB = mockDB
 
 	mock.ExpectExec("DELETE FROM documents").
-		WithArgs("999").
+		WithArgs(999).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	router := setupRouter()
@@ -331,6 +331,26 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("status esperado 404, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestDeleteDocument_InvalidID(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	router := setupRouter()
+
+	req := httptest.NewRequest(http.MethodDelete, "/documents/abc", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status esperado 400, recebido %d. corpo: %s", w.Code, w.Body.String())
 	}
 }
 

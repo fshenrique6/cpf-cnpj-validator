@@ -103,7 +103,7 @@ func GetDocuments(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var documents []models.Document
+	documents := []models.Document{}
 
 	for rows.Next() {
 		var d models.Document

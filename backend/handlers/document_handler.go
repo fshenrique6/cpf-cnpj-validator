@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"cpf-cnpj-validator/validator"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func CreateDocument(c *gin.Context) {
@@ -40,7 +42,12 @@ func CreateDocument(c *gin.Context) {
 		Scan(&newDocument.ID, &newDocument.CreatedAt, &newDocument.UpdatedAt)
 
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "documento já cadastrado ou erro ao criar"})
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			c.JSON(http.StatusConflict, gin.H{"error": "Documento ja cadastrado"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao criar documento"})
 		return
 	}
 

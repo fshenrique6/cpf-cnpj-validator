@@ -21,8 +21,12 @@ func setupRouter() *gin.Engine {
 	router := gin.New()
 	router.POST("/documents", CreateDocument)
 	router.GET("/documents/:id", GetDocumentByID)
+	router.PATCH("/documents/:id/blocklist", UpdateBlocklist)
+	router.DELETE("/documents/:id", DeleteDocument)
 	return router
 }
+
+//testes CreateDocument
 
 func TestCreateDocument_ValidCPF(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
@@ -136,6 +140,8 @@ func TestCreateDocument_DatabaseError(t *testing.T) {
 	}
 }
 
+//testes GetDocumentByID
+
 func TestGetDocumentByID_Found(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	if err != nil {
@@ -205,5 +211,123 @@ func TestGetDocumentByID_InvalidID(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("status esperado 400, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+//testes UpdateBlocklist
+
+func TestUpdateBlocklist_Success(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	now := time.Now()
+	rows := sqlmock.NewRows([]string{"id", "number", "type", "blocklisted", "created_at", "updated_at"}).
+		AddRow(1, "11144477735", "cpf", true, now, now)
+
+	mock.ExpectQuery("UPDATE documents").
+		WithArgs(true, 1).
+		WillReturnRows(rows)
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]bool{"blocklisted": true})
+	req := httptest.NewRequest(http.MethodPatch, "/documents/1/blocklist", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status esperado 200, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("expectativas do mock não cumpridas: %v", err)
+	}
+}
+
+func TestUpdateBlocklist_NotFound(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectQuery("UPDATE documents").
+		WithArgs(true, 999).
+		WillReturnError(sql.ErrNoRows)
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]bool{"blocklisted": true})
+	req := httptest.NewRequest(http.MethodPatch, "/documents/999/blocklist", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status esperado 404, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+//testes DeleteDocument
+
+func TestDeleteDocument_Success(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectExec("DELETE FROM documents").
+		WithArgs("1").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	router := setupRouter()
+
+	req := httptest.NewRequest(http.MethodDelete, "/documents/1", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status esperado 200, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("expectativas do mock não cumpridas: %v", err)
+	}
+}
+
+func TestDeleteDocument_NotFound(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectExec("DELETE FROM documents").
+		WithArgs("999").
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	router := setupRouter()
+
+	req := httptest.NewRequest(http.MethodDelete, "/documents/999", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status esperado 404, recebido %d. corpo: %s", w.Code, w.Body.String())
 	}
 }

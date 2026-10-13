@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cpf-cnpj-validator/database"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func setupRouter() *gin.Engine {
@@ -75,5 +77,59 @@ func TestCreateDocument_InvalidDocument(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("status esperado 400, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateDocument_Duplicate(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectQuery("INSERT INTO documents").
+		WithArgs("11144477735", "cpf", false).
+		WillReturnError(&pgconn.PgError{Code: "23505"})
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "111.444.777-35"})
+	req := httptest.NewRequest(http.MethodPost, "/documents", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("status esperado 409, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateDocument_DatabaseError(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectQuery("INSERT INTO documents").
+		WithArgs("11144477735", "cpf", false).
+		WillReturnError(errors.New("conexão perdida"))
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "111.444.777-35"})
+	req := httptest.NewRequest(http.MethodPost, "/documents", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("status esperado 500, recebido %d. corpo: %s", w.Code, w.Body.String())
 	}
 }

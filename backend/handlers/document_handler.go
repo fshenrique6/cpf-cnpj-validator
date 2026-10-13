@@ -233,9 +233,13 @@ func UpdateBlocklist(c *gin.Context) {
 }
 
 func DeleteDocument(c *gin.Context) {
-	id := c.Param("id")
+	idInt, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
 
-	result, err := database.DB.Exec("DELETE FROM documents WHERE id = $1", id)
+	result, err := database.DB.Exec("DELETE FROM documents WHERE id = $1", idInt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

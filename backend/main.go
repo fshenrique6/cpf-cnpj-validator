@@ -5,6 +5,7 @@ import (
 	"cpf-cnpj-validator/handlers"
 	"cpf-cnpj-validator/status"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,7 @@ func main() {
 	database.Connect()
 
 	router := gin.Default()
+	router.Use(cors.Default())
 	router.Use(status.CountRequests())
 
 	router.GET("/ping", func(c *gin.Context) {

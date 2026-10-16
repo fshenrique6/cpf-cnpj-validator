@@ -184,7 +184,12 @@ func UpdateDocument(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			c.JSON(http.StatusConflict, gin.H{"error": "documento já cadastrado"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao atualizar documento"})
 		return
 	}
 

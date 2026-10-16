@@ -25,6 +25,7 @@ func setupRouter() *gin.Engine {
 	router.PATCH("/documents/:id/blocklist", UpdateBlocklist)
 	router.DELETE("/documents/:id", DeleteDocument)
 	router.GET("/documents", GetDocuments)
+	router.PUT("/documents/:id", UpdateDocument)
 	return router
 }
 
@@ -545,5 +546,141 @@ func TestGetDocuments_EmptyReturnsArray(t *testing.T) {
 
 	if w.Body.String() != "[]" {
 		t.Errorf("lista vazia deveria ser [], recebido %s", w.Body.String())
+	}
+}
+
+
+func TestUpdateDocument_Success(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	now := time.Now()
+	rows := sqlmock.NewRows([]string{"id", "number", "type", "blocklisted", "created_at", "updated_at"}).
+		AddRow(1, "52998224725", "cpf", false, now, now)
+
+	mock.ExpectQuery("UPDATE documents").
+		WithArgs("52998224725", "cpf", 1).
+		WillReturnRows(rows)
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "529.982.247-25"})
+	req := httptest.NewRequest(http.MethodPut, "/documents/1", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status esperado 200, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("expectativas do mock não cumpridas: %v", err)
+	}
+}
+
+func TestUpdateDocument_NotFound(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectQuery("UPDATE documents").
+		WithArgs("52998224725", "cpf", 999).
+		WillReturnError(sql.ErrNoRows)
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "529.982.247-25"})
+	req := httptest.NewRequest(http.MethodPut, "/documents/999", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status esperado 404, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestUpdateDocument_InvalidDocument(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "12345678900"})
+	req := httptest.NewRequest(http.MethodPut, "/documents/1", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status esperado 400, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestUpdateDocument_InvalidID(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "529.982.247-25"})
+	req := httptest.NewRequest(http.MethodPut, "/documents/abc", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status esperado 400, recebido %d. corpo: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestUpdateDocument_Duplicate(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("erro ao criar mock: %v", err)
+	}
+	defer mockDB.Close()
+
+	database.DB = mockDB
+
+	mock.ExpectQuery("UPDATE documents").
+		WithArgs("52998224725", "cpf", 1).
+		WillReturnError(&pgconn.PgError{Code: "23505"})
+
+	router := setupRouter()
+
+	body, _ := json.Marshal(map[string]string{"number": "529.982.247-25"})
+	req := httptest.NewRequest(http.MethodPut, "/documents/1", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusConflict {
+		t.Errorf("status esperado 409, recebido %d. corpo: %s", w.Code, w.Body.String())
 	}
 }

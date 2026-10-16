@@ -2,7 +2,10 @@ import { useState } from "react";
 import { deleteDocument, updateBlocklist } from "../api/Documents";
 import { formatDocument } from "../utils/Format";
 
-function DocumentTable({ documents, onChanged }) {
+function DocumentTable({ 
+    documents, 
+    onChanged,
+    emptyMessage = "Nenhum documento encontrado."}) {
   const [error, setError] = useState("");
 
   async function handleToggleBlocklist(doc) {
@@ -32,7 +35,7 @@ function DocumentTable({ documents, onChanged }) {
   }
 
   if (documents.length === 0) {
-    return <p className="empty">Nenhum documento cadastrado.</p>;
+    return <p className="empty">{emptyMessage}</p>;
   }
 
   return (

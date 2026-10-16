@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createDocument } from "../api/Documents.js";
+import { createDocument } from "../api/Documents";
 
 function DocumentForm({ onCreated }) {
   const [number, setNumber] = useState("");
@@ -23,18 +23,27 @@ function DocumentForm({ onCreated }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="form" onSubmit={handleSubmit}>
       <input
+        className="form__input"
         type="text"
-        placeholder="CPF ou CNPJ"
+        placeholder="Digite um CPF ou CNPJ"
         value={number}
         onChange={(event) => setNumber(event.target.value)}
         disabled={submitting}
       />
-      <button type="submit" disabled={submitting || number.trim() === ""}>
+      <button
+        className="btn btn--primary"
+        type="submit"
+        disabled={submitting || number.trim() === ""}
+      >
         Cadastrar
       </button>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="alert" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

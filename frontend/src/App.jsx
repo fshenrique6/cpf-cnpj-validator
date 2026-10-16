@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listDocuments } from "./api/Documents.js";
+import { listDocuments } from "./api/Documents";
 import DocumentForm from "./components/DocumentForm";
 import DocumentTable from "./components/DocumentTable";
 
@@ -22,14 +22,24 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>CPF/CNPJ Validator</h1>
+    <main className="app">
+      <h1 className="app__title">CPF/CNPJ Validator</h1>
+      <p className="app__subtitle">
+        Cadastre, valide e gerencie CPFs e CNPJs.
+      </p>
 
-      <DocumentForm onCreated={reload} />
+      <section className="card">
+        <DocumentForm onCreated={reload} />
+      </section>
 
-      {error && <p>{error}</p>}
-
-      <DocumentTable documents={documents} onChanged={reload} />
+      <section className="card">
+        {error && (
+          <p className="alert" role="alert">
+            {error}
+          </p>
+        )}
+        <DocumentTable documents={documents} onChanged={reload} />
+      </section>
     </main>
   );
 }

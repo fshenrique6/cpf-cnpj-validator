@@ -3,6 +3,7 @@ import { listDocuments } from "./api/Documents";
 import DocumentForm from "./components/DocumentForm";
 import DocumentTable from "./components/DocumentTable";
 import Filters from "./components/Filters";
+import StatusBar from "./components/StatusBar";
 
 const INITIAL_FILTERS = {
   type: "",
@@ -79,6 +80,8 @@ function App() {
           }
         />
       </section>
+
+      <StatusBar />
     </main>
   );
 }

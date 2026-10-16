@@ -275,3 +275,26 @@ body {
 .filters__reset {
   margin-left: auto;
 }
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.status-bar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-bar__dot--online {
+  background: var(--success);
+}
+
+.status-bar__dot--offline {
+  background: var(--danger);
+}

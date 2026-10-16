@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listDocuments } from "./api/Documents.js";
 import DocumentForm from "./components/DocumentForm";
+import DocumentTable from "./components/DocumentTable";
 
 function App() {
   const [documents, setDocuments] = useState([]);
@@ -28,14 +29,7 @@ function App() {
 
       {error && <p>{error}</p>}
 
-      <ul>
-        {documents.map((doc) => (
-          <li key={doc.id}>
-            {doc.type.toUpperCase()} — {doc.number}
-            {doc.blocklisted && " (bloqueado)"}
-          </li>
-        ))}
-      </ul>
+      <DocumentTable documents={documents} onChanged={reload} />
     </main>
   );
 }

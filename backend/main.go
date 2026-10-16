@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"cpf-cnpj-validator/database"
@@ -11,13 +13,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func allowedOrigins() []string {
+	value := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if value == "" {
+		return []string{"http://localhost:5173"}
+	}
+	return strings.Split(value, ",")
+}
+
 func main() {
 	database.Connect()
 
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:5173"},
+		AllowOrigins: allowedOrigins(),
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{"Content-Type"},
 		MaxAge:       12 * time.Hour,
